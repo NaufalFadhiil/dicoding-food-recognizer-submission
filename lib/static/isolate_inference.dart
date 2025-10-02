@@ -50,52 +50,47 @@ class IsolateInference {
   ) async {
     final interpreter = await Interpreter.fromFile(File(model.modelPath));
 
-    // Baca gambar
     final rawImage = File(model.imagePath).readAsBytesSync();
     final image = img.decodeImage(rawImage);
     if (image == null) {
+      interpreter.close();
       return {'foodName': "Tidak Terdeteksi", 'confidence': 0.0};
     }
-    final resized = img.copyResize(image, width: 224, height: 224);
 
-    // Normalisasi input [1, 224, 224, 3]
-    var input = List.generate(
-      1,
-      (_) => List.generate(
-        224,
-        (y) => List.generate(
-          224,
-          (x) => List.generate(3, (c) {
-            final pixel = resized.getPixel(x, y);
-            if (c == 0) return pixel.r / 255.0;
-            if (c == 1) return pixel.g / 255.0;
-            return pixel.b / 255.0;
-          }),
-        ),
-      ),
-    );
+    final resized = img.copyResize(image, width: 192, height: 192);
+    final imageBytes = resized.getBytes(format: img.Format.rgb);
 
-    var output = List.filled(
-      model.labelsLength,
-      0.0,
-    ).reshape([1, model.labelsLength]);
+    final input = imageBytes.reshape([1, 192, 192, 3]);
 
-    interpreter.run(input, output);
+    final output = List.filled(
+      model.labelsLength + 1,
+      0,
+    ).reshape([1, model.labelsLength + 1]);
 
-    final confidences = output[0] as List<double>;
+    try {
+      interpreter.run(input, output);
+    } catch (e) {
+      interpreter.close();
+      return {'foodName': "Error", 'confidence': 0.0, 'error': e.toString()};
+    }
+    interpreter.close();
 
-    int maxIndex = 0;
-    double maxConfidence = confidences[0];
-    for (int i = 1; i < confidences.length; i++) {
-      if (confidences[i] > maxConfidence) {
-        maxConfidence = confidences[i];
-        maxIndex = i;
+    final scores = output[0];
+    double maxConfidence = 0.0;
+    int maxIndex = -1;
+
+    for (int i = 1; i < scores.length; i++) {
+      if (scores[i] > maxConfidence) {
+        maxConfidence = scores[i].toDouble();
+        maxIndex = i - 1;
       }
     }
 
     final foodName =
         (maxIndex != -1) ? model.labels[maxIndex] : "Tidak Terdeteksi";
 
-    return {'foodName': foodName, 'confidence': maxConfidence};
+    final normalizedConfidence = maxConfidence / 255.0;
+
+    return {'foodName': foodName, 'confidence': normalizedConfidence};
   }
 }
