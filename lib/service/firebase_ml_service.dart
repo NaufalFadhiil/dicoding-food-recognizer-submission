@@ -2,17 +2,14 @@ import 'dart:io';
 import 'package:firebase_ml_model_downloader/firebase_ml_model_downloader.dart';
 
 class FirebaseMLService {
-  // ⚠️ Ganti dengan nama model yang Anda unggah ke Firebase ML
-  static const String _modelName = "food_classifier_model"; 
+  static const String _modelName = "food_classifier_model";
 
   Future<File?> loadModel() async {
     try {
       final instance = FirebaseModelDownloader.instance;
       final model = await instance.getModel(
-        _modelName, 
-        // Mengunduh model terbaru yang tersedia secara lokal
-        FirebaseModelDownloadType.latestModel, 
-        // Menggunakan kondisi minimal agar mudah diuji
+        _modelName,
+        FirebaseModelDownloadType.latestModel,
         FirebaseModelDownloadConditions(
           iosAllowsCellularAccess: true,
           iosAllowsBackgroundDownloading: false,
@@ -21,10 +18,9 @@ class FirebaseMLService {
           androidDeviceIdleRequired: false,
         ),
       );
-      // Mengembalikan File TFLite yang sudah diunduh/cache
-      return model.file; 
-    } catch (e) {
-      print("Error downloading model from Firebase ML: $e");
+
+      return model.file;
+    } catch (_) {
       return null;
     }
   }
