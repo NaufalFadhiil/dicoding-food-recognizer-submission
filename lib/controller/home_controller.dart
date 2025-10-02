@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:submission/service/image_service.dart';
 import 'package:submission/ui/result_page.dart';
+import 'package:submission/ui/camera_page.dart';
 
 class HomeController extends ChangeNotifier {
   final ImageService _imageService = ImageService();
   String? _imagePath;
   String? get imagePath => _imagePath;
 
-  // Tambahkan state untuk loading, agar tombol Analyze bisa di-disable
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -17,19 +18,45 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Fungsi untuk memilih gambar dari galeri/kamera
-  Future<void> pickAndCropImage(
-    BuildContext context,
-    ImageSource source,
-  ) async {
+  Future<void> pickFromGallery() async {
     _setLoading(true);
-    _imagePath = await _imageService.pickImage(source);
+    _imagePath = await _imageService.pickImageFromGallery();
     if (_imagePath != null) {
-      // Gambar berhasil diambil dan di-crop, tampilkan di UI
-      // (Kita akan update HomePage agar bisa menampilkan gambar ini)
       notifyListeners();
     }
     _setLoading(false);
+  }
+
+  Future<void> openCameraPage(BuildContext context) async {
+    final cameras = await availableCameras();
+    final firstCamera = cameras.first;
+    final cameraStatus = await Permission.camera.request();
+    if (!cameraStatus.isGranted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Izin kamera ditolak")));
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => CameraPage(
+              camera: firstCamera,
+              onImageTaken: (path) {
+                setImagePath(path);
+              },
+            ),
+      ),
+    );
+  }
+
+  void setImagePath(String path) async {
+    final cropped = await _imageService.cropImage(path);
+
+    _imagePath = cropped ?? path;
+    notifyListeners();
   }
 
   void goToResultPage(BuildContext context) {
@@ -41,12 +68,9 @@ class HomeController extends ChangeNotifier {
         ),
       );
     } else {
-      // Tampilkan pesan error jika belum ada gambar
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih gambar terlebih dahulu!')),
       );
     }
   }
-
-  // TODO: Tambahkan logic untuk Camera Feed (Kriteria 1 Advanced)
 }

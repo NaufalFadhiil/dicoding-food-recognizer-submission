@@ -1,49 +1,68 @@
-import 'package:flutter/services.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart'; // Import CroppedFile dan ImageCropper
 import 'package:permission_handler/permission_handler.dart';
 
 class ImageService {
   final ImagePicker _picker = ImagePicker();
 
-  Future<String?> pickImage(ImageSource source) async {
-    // 1. Cek izin (permission)
-    if (source == ImageSource.camera) {
-      var status = await Permission.camera.request();
-      if (!status.isGranted) return null;
-    } else {
-      // Untuk galeri (photos / storage)
-      var photosStatus = await Permission.photos.request();
-      var storageStatus = await Permission.storage.request();
+  Future<String?> pickImageFromGallery() async {
+    try {
+      if (Platform.isAndroid) {
+        final photosStatus = await Permission.photos.status;
+        final storageStatus = await Permission.storage.status;
 
-      if (!photosStatus.isGranted && !storageStatus.isGranted) {
-        return null;
+        if (!photosStatus.isGranted && !storageStatus.isGranted) {
+          final result =
+              await [Permission.photos, Permission.storage].request();
+          if (!(result[Permission.photos]?.isGranted == true ||
+              result[Permission.storage]?.isGranted == true)) {
+            return null;
+          }
+        }
+      } else {
+        final status = await Permission.photos.status;
+        if (!status.isGranted) {
+          final s = await Permission.photos.request();
+          if (!s.isGranted) return null;
+        }
       }
+
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+      );
+      if (pickedFile == null) return null;
+
+      return await cropImage(pickedFile.path);
+    } catch (e, st) {
+      debugPrint('ImageService.pickImageFromGallery error: $e\n$st');
+      return null;
     }
+  }
 
-    // 2. Ambil gambar
-    final XFile? pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile == null) return null;
+  Future<String?> cropImage(String imagePath) async {
+    try {
+      final CroppedFile? cropped = await ImageCropper().cropImage(
+        sourcePath: imagePath,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 85,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: Colors.blue,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(title: 'Crop Image'),
+        ],
+      );
 
-    // 3. Crop image
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: pickedFile.path,
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 80,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Cropper',
-          toolbarColor: const Color(0xFF2196F3),
-          toolbarWidgetColor: const Color(0xFFFFFFFF),
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
-        ),
-        IOSUiSettings(
-          title: 'Cropper',
-        ),
-      ],
-    );
-
-    return croppedFile?.path;
+      return cropped?.path;
+    } catch (e, st) {
+      debugPrint('ImageService.cropImage error: $e\n$st');
+      return null;
+    }
   }
 }

@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:submission/controller/home_controller.dart';
 
@@ -15,11 +13,8 @@ class HomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Food Recognizer App'),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: const _HomeBody(),
-        ),
+      body: const SafeArea(
+        child: Padding(padding: EdgeInsets.all(8.0), child: _HomeBody()),
       ),
     );
   }
@@ -44,15 +39,15 @@ class _HomeBody extends StatelessWidget {
                   title: const Text('Galeri'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    controller.pickAndCropImage(context, ImageSource.gallery);
+                    controller.pickFromGallery();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.camera_alt),
-                  title: const Text('Kamera'),
+                  title: const Text('Kamera (Custom Feed)'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    controller.pickAndCropImage(context, ImageSource.camera);
+                    controller.openCameraPage(context);
                   },
                 ),
               ],
