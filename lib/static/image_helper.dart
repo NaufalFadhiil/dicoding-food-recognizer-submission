@@ -7,12 +7,10 @@ class ImageHelper {
   final ImagePicker _picker = ImagePicker();
 
   Future<File?> pickAndCropImage(ImageSource source) async {
-    // Step 1: Ambil gambar dari kamera/galeri
     final XFile? pickedFile = await _picker.pickImage(source: source);
 
     if (pickedFile == null) return null;
 
-    // Step 2: Crop image setelah dipilih
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),

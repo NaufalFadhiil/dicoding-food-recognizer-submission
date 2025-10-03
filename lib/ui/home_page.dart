@@ -12,9 +12,10 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Food Recognizer App'),
+        centerTitle: true,
       ),
       body: const SafeArea(
-        child: Padding(padding: EdgeInsets.all(8.0), child: _HomeBody()),
+        child: Padding(padding: EdgeInsets.all(16.0), child: _HomeBody()),
       ),
     );
   }
@@ -30,12 +31,15 @@ class _HomeBody extends StatelessWidget {
     void _showImageSourceDialog(BuildContext context) {
       showModalBottomSheet(
         context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         builder: (BuildContext bc) {
           return SafeArea(
             child: Wrap(
               children: <Widget>[
                 ListTile(
-                  leading: const Icon(Icons.photo_library),
+                  leading: const Icon(Icons.photo_library, color: Colors.blue),
                   title: const Text('Galeri'),
                   onTap: () {
                     Navigator.of(context).pop();
@@ -43,7 +47,7 @@ class _HomeBody extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt),
+                  leading: const Icon(Icons.camera_alt, color: Colors.green),
                   title: const Text('Kamera (Custom Feed)'),
                   onTap: () {
                     Navigator.of(context).pop();
@@ -58,57 +62,83 @@ class _HomeBody extends StatelessWidget {
     }
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () => _showImageSourceDialog(context),
-                  child:
-                      controller.imagePath == null
-                          ? const Align(
-                            alignment: Alignment.center,
-                            child: Icon(Icons.image, size: 100),
-                          )
-                          : Image.file(
-                            File(controller.imagePath!),
-                            fit: BoxFit.cover,
-                            height: 200,
-                          ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 32,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      textStyle: const TextStyle(fontSize: 12),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _showImageSourceDialog(context),
+                      child:
+                          controller.imagePath == null
+                              ? const Icon(
+                                Icons.image_outlined,
+                                size: 120,
+                                color: Colors.grey,
+                              )
+                              : ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: SizedBox(
+                                  height: 200,
+                                  width: double.infinity,
+                                  child: Image.file(
+                                    File(controller.imagePath!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
                     ),
-                    onPressed: () => _showImageSourceDialog(context),
-                    icon: const Icon(Icons.add_a_photo, size: 16),
-                    label: const Text("Pilih Gambar"),
-                  ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      onPressed: () => _showImageSourceDialog(context),
+                      icon: const Icon(Icons.add_a_photo, size: 18),
+                      label: const Text("Pilih Gambar"),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
-
-        FilledButton.tonal(
-          onPressed:
-              controller.isLoading || controller.imagePath == null
-                  ? null
-                  : () {
-                    controller.goToResultPage(context);
-                  },
-          child:
-              controller.isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text("Analyze"),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed:
+                controller.isLoading || controller.imagePath == null
+                    ? null
+                    : () {
+                      controller.goToResultPage(context);
+                    },
+            child:
+                controller.isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Text("Analyze", style: TextStyle(fontSize: 16)),
+          ),
         ),
       ],
     );
