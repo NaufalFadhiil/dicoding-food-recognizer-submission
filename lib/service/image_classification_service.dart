@@ -26,7 +26,7 @@ class ImageClassificationService {
   Future<void> _loadLabels() async {
     final labelsTxt = await rootBundle.loadString('assets/labels.txt');
     final allLabels = labelsTxt.split('\n').where((s) => s.isNotEmpty).toList();
-    _foodLabels = allLabels.sublist(1); // Mengabaikan __background__
+    _foodLabels = allLabels.sublist(1); 
     _isLabelsLoaded = true;
   }
 
